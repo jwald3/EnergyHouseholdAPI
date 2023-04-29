@@ -2,8 +2,8 @@ import Household from "../models/Household.js";
 
 export const getAllHouseholds = async (req, res) => {
     try {
-        const Households = await Household.findAll();
-        res.json(Households);
+        const households = await Household.findAll();
+        res.json(households);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
         res.status(500).json({ message: "Error retrieving households" });
@@ -12,10 +12,10 @@ export const getAllHouseholds = async (req, res) => {
 
 export const getHouseholdById = async (req, res) => {
     try {
-        const Household = await Household.findByPk(req.params.household_id);
-        if (!Household)
+        const household = await Household.findByPk(req.params.household_id);
+        if (!household)
             return res.status(404).json({ message: "Household not found." });
-        res.json(Household);
+        res.json(household);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
         res.status(500).json({ message: "Error retrieving husehold." });
@@ -24,8 +24,8 @@ export const getHouseholdById = async (req, res) => {
 
 export const createHousehold = async (req, res) => {
     try {
-        const Household = await Household.create(req.body);
-        res.status(201).json(Household);
+        const household = await Household.create(req.body);
+        res.status(201).json(household);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
         res.status(500).json({ message: "Error creating Household." });
