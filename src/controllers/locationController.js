@@ -13,8 +13,11 @@ export const getAllLocations = async (req, res) => {
 export const getLocationById = async (req, res) => {
     try {
         const location = await Location.findByPk(req.params.location_id);
-        if (!location)
+        console.log("Requested location_id:", req.params.location_id); // Log the requested location_id
+        console.log("Location object:", location); // Log the entire location object
+        if (!location) {
             return res.status(404).json({ message: "Location not found." });
+        }
         res.json(location);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
