@@ -2,8 +2,8 @@ import Location from "../models/Location.js";
 
 export const getAllLocations = async (req, res) => {
     try {
-        const Locations = await Location.findAll();
-        res.json(Locations);
+        const locations = await Location.findAll();
+        res.json(locations);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
         res.status(500).json({ message: "Error retrieving locations" });
@@ -12,10 +12,10 @@ export const getAllLocations = async (req, res) => {
 
 export const getLocationById = async (req, res) => {
     try {
-        const Location = await Location.findByPk(req.params.location_id);
-        if (!Location)
+        const location = await Location.findByPk(req.params.location_id);
+        if (!location)
             return res.status(404).json({ message: "Location not found." });
-        res.json(Location);
+        res.json(location);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
         res.status(500).json({ message: "Error retrieving location." });
