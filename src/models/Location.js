@@ -14,6 +14,10 @@ Location.init(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        region_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
         city: {
             type: DataTypes.TEXT,
             allowNull: false,

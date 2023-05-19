@@ -14,10 +14,6 @@ Household.init(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        region_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
         location_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
