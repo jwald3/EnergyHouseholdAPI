@@ -1,4 +1,5 @@
 import Household from "../models/Household.js";
+import { getLocationId } from "../services/locationService.js";
 
 export const getAllHouseholds = async (req, res) => {
     try {
