@@ -24,13 +24,26 @@ export const getHouseholdById = async (req, res) => {
 
 export const createHousehold = async (req, res) => {
     try {
-        const household = await Household.create(req.body);
+        const { city, state_id, zip_code, ...rest } = req.body;
+
+        // Fetch the location_id
+        const location_id = await getLocationId(city, state_id, zip_code);
+
+        // If the location wasn't found, return an error response.
+        if (!location_id) {
+            return res.status(400).json({ message: "Invalid location." });
+        }
+
+        // Create a new household with the fetched location_id
+        const household = await Household.create({ location_id, ...rest });
+
         res.status(201).json(household);
     } catch (error) {
-        console.error("Error details:", error); // Log the error details
+        console.error("Error details:", error);
         res.status(500).json({ message: "Error creating Household." });
     }
 };
+
 
 export const updateHousehold = async (req, res) => {
     try {

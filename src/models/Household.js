@@ -10,15 +10,19 @@ Household.init(
             autoIncrement: true,
             primaryKey: true,
         },
+        name: {
+            type: DataTypes.TEXT,
+            allowNull: false,
+        },
         provider_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         location_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        address: {
+        street_address: {
             type: DataTypes.TEXT,
             allowNull: false,
         },
