@@ -1,3 +1,5 @@
+import Location from "../models/Location";
+
 export const getLocationId = async (city, state_id, zip_code) => {
     // Check if the location already exists.
     let location = await Location.findOne({ where: { city, state_id, zip_code } });
