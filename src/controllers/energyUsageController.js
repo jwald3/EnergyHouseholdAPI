@@ -2,7 +2,15 @@ import EnergyUsage from "../models/EnergyUsage.js";
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const energyUsages = await EnergyUsage.findAll();
+        const { household_id } = req.query;
+
+        let whereClause = {};
+
+        if (household_id) {
+            whereClause.household_id = household_id;
+        }
+
+        const energyUsages = await EnergyUsage.findAll({ where: whereClause});
         
         const processedData = energyUsages.map(usage => ({
             ...usage.get(),
