@@ -1,14 +1,26 @@
 import EnergyUsage from "../models/EnergyUsage.js";
+import { Op } from 'sequelize';
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id } = req.query;
+        const { household_id, date } = req.query;
 
         let whereClause = {};
 
         if (household_id) {
             whereClause.household_id = household_id;
         }
+
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(date);
+            endDate.setDate(endDate.getDate() + 1);
+        
+            whereClause.reading_time = {
+                [Op.between]: [startDate, endDate]
+            };
+        }
+        
 
         const energyUsages = await EnergyUsage.findAll({ where: whereClause});
         
