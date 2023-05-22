@@ -6,7 +6,7 @@ class EnergyUsage extends Model {}
 EnergyUsage.init(
     {
         usage_id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             autoIncrement: true,
             primaryKey: true,
         },
@@ -19,9 +19,9 @@ EnergyUsage.init(
             allowNull: false,
         },
         energy_usage: {
-            type: DataTypes.NUMBER,
+            type: DataTypes.DECIMAL,
             allowNull: false,
-        },
+        },        
     },
     {
         sequelize,
