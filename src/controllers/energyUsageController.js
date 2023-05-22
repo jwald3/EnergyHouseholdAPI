@@ -3,12 +3,20 @@ import EnergyUsage from "../models/EnergyUsage.js";
 export const getAllEnergyUsages = async (req, res) => {
     try {
         const energyUsages = await EnergyUsage.findAll();
-        res.json(energyUsages);
+        
+        const processedData = energyUsages.map(usage => ({
+            ...usage.get(),
+            usage_id: Number(usage.get().usage_id),
+            energy_usage: Number(usage.get().energy_usage)
+        }));
+
+        res.json(processedData);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
+
 
 export const getEnergyUsageById = async (req, res) => {
     try {
