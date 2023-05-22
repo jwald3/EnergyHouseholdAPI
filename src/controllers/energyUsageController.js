@@ -14,13 +14,12 @@ export const getAllEnergyUsages = async (req, res) => {
         if (date) {
             const startDate = new Date(date);
             const endDate = new Date(date);
-            endDate.setDate(endDate.getDate() + 1);
-        
+            endDate.setHours(23, 59, 59, 999); // Set the time to end of the day
+
             whereClause.reading_time = {
                 [Op.between]: [startDate, endDate]
             };
         }
-        
 
         const energyUsages = await EnergyUsage.findAll({ where: whereClause});
         
@@ -32,11 +31,10 @@ export const getAllEnergyUsages = async (req, res) => {
 
         res.json(processedData);
     } catch (error) {
-        console.error("Error details:", error); // Log the error details
+        console.error("Error details:", error);
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
-
 
 export const getEnergyUsageById = async (req, res) => {
     try {
