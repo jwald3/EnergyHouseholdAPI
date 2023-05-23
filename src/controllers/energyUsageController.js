@@ -1,10 +1,9 @@
 import EnergyUsage from "../models/EnergyUsage.js";
 import { Op } from 'sequelize';
-import sequelize from "../utils/database.js";
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date, month, aggregateByDay, aggregateByTime } = req.query;
+        const { household_id, date, aggregateByDay, aggregateByTime, month } = req.query;
 
         let whereClause = {};
 
@@ -23,18 +22,22 @@ export const getAllEnergyUsages = async (req, res) => {
             };
         }
 
-        if (month) {
-            const monthInt = parseInt(month, 10);
-            whereClause.reading_time = {
-                ...whereClause.reading_time,
-                [Op.and]: sequelize.where(sequelize.fn('EXTRACT', sequelize.literal('month from "reading_time"')), monthInt)
-            };
-        }
-
         const energyUsages = await EnergyUsage.findAll({ where: whereClause });
 
+        // Convert the string to a number
+        const filterMonth = Number(month);
+
+        let filteredEnergyUsages = energyUsages;
+
+        if (month && !isNaN(filterMonth) && filterMonth >= 1 && filterMonth <= 12) {
+            filteredEnergyUsages = energyUsages.filter(usage => {
+                const usageMonth = new Date(usage.get().reading_time).getMonth() + 1;
+                return usageMonth === filterMonth;
+            });
+        }
+
         if (aggregateByTime === 'true') {
-            const aggregatedData = energyUsages.reduce((acc, usage) => {
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
                 const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
                 if (!acc[timeKey]) {
                     acc[timeKey] = {
@@ -51,7 +54,7 @@ export const getAllEnergyUsages = async (req, res) => {
             const aggregatedDataArray = Object.values(aggregatedData);
             res.json(aggregatedDataArray);
         } else if (aggregateByDay === 'true') {
-            const aggregatedData = energyUsages.reduce((acc, usage) => {
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
                 const dateKey = usage.get().reading_time.toISOString().split('T')[0];
                 if (!acc[dateKey]) {
                     acc[dateKey] = {
@@ -68,7 +71,7 @@ export const getAllEnergyUsages = async (req, res) => {
             const aggregatedDataArray = Object.values(aggregatedData);
             res.json(aggregatedDataArray);
         } else {
-            const processedData = energyUsages.map(usage => ({
+            const processedData = filteredEnergyUsages.map(usage => ({
                 ...usage.get(),
                 usage_id: Number(usage.get().usage_id),
                 energy_usage: Number(usage.get().energy_usage)
@@ -81,6 +84,7 @@ export const getAllEnergyUsages = async (req, res) => {
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
+
 
 
 
