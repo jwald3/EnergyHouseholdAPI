@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date, month, aggregateByDay } = req.query;
+        const { household_id, date, month, aggregateByDay, aggregateByTime } = req.query;
 
         let whereClause = {};
 
@@ -26,8 +26,8 @@ export const getAllEnergyUsages = async (req, res) => {
             whereClause[Op.and] = sequelize.where(sequelize.fn('MONTH', sequelize.col('reading_time')), month);
         }
 
-        const energyUsages = await EnergyUsage.findAll({ where: whereClause});
-        
+        const energyUsages = await EnergyUsage.findAll({ where: whereClause });
+
         if (aggregateByTime === 'true') {
             const aggregatedData = energyUsages.reduce((acc, usage) => {
                 const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
@@ -42,7 +42,7 @@ export const getAllEnergyUsages = async (req, res) => {
                 acc[timeKey].count += 1;
                 return acc;
             }, {});
-        
+
             const aggregatedDataArray = Object.values(aggregatedData);
             res.json(aggregatedDataArray);
         } else if (aggregateByDay === 'true') {
@@ -59,7 +59,7 @@ export const getAllEnergyUsages = async (req, res) => {
                 acc[dateKey].count += 1;
                 return acc;
             }, {});
-        
+
             const aggregatedDataArray = Object.values(aggregatedData);
             res.json(aggregatedDataArray);
         } else {
@@ -76,6 +76,7 @@ export const getAllEnergyUsages = async (req, res) => {
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
+
 
 export const getEnergyUsageById = async (req, res) => {
     try {
