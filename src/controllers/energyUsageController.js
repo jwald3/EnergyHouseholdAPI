@@ -13,12 +13,13 @@ export const getAllEnergyUsages = async (req, res) => {
 
         if (date) {
             const startDate = new Date(date);
+            startDate.setHours(0, 0, 0, 0); // Set the time to start of the day
             const endDate = new Date(date);
             endDate.setHours(23, 59, 59, 999); // Set the time to end of the day
-            endDate.setMilliseconds(endDate.getMilliseconds() - 1); // Subtract 1 millisecond to exclude midnight
-        
+
             whereClause.reading_time = {
-                [Op.between]: [startDate, endDate]
+                [Op.gte]: startDate,
+                [Op.lte]: endDate
             };
         }
 
