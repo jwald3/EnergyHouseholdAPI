@@ -24,7 +24,7 @@ export const getAllEnergyUsages = async (req, res) => {
         }
 
         if (month) {
-            whereClause[Op.and] = sequelize.where(sequelize.fn('MONTH', sequelize.col('reading_time')), month);
+            whereClause[Op.and] = sequelize.where(sequelize.fn('EXTRACT', 'month', sequelize.col('reading_time')), month);
         }
 
         const energyUsages = await EnergyUsage.findAll({ where: whereClause });
@@ -77,6 +77,7 @@ export const getAllEnergyUsages = async (req, res) => {
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
+
 
 
 export const getEnergyUsageById = async (req, res) => {
