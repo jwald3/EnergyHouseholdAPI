@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date } = req.query;
+        const { household_id, date, aggregateByDay } = req.query;
 
         let whereClause = {};
 
@@ -24,13 +24,30 @@ export const getAllEnergyUsages = async (req, res) => {
 
         const energyUsages = await EnergyUsage.findAll({ where: whereClause});
         
-        const processedData = energyUsages.map(usage => ({
-            ...usage.get(),
-            usage_id: Number(usage.get().usage_id),
-            energy_usage: Number(usage.get().energy_usage)
-        }));
+        if (aggregateByDay === 'true') {
+            const aggregatedData = energyUsages.reduce((acc, usage) => {
+                const dateKey = usage.get().reading_time.toISOString().split('T')[0];
+                if (!acc[dateKey]) {
+                    acc[dateKey] = {
+                        date: dateKey,
+                        total_energy_usage: 0
+                    };
+                }
+                acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
+                return acc;
+            }, {});
 
-        res.json(processedData);
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+        } else {
+            const processedData = energyUsages.map(usage => ({
+                ...usage.get(),
+                usage_id: Number(usage.get().usage_id),
+                energy_usage: Number(usage.get().energy_usage)
+            }));
+
+            res.json(processedData);
+        }
     } catch (error) {
         console.error("Error details:", error);
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
