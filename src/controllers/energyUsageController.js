@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date, aggregateByDay, aggregateByTime, month } = req.query;
+        const { household_id, date, aggregateByDay, aggregateByTime, aggregateByWeekDay, month } = req.query;
 
         let whereClause = {};
 
@@ -66,6 +66,25 @@ export const getAllEnergyUsages = async (req, res) => {
                 }
                 acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
                 acc[dateKey].count += 1;
+                return acc;
+            }, {});
+
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+        } else if (aggregateByWeekDay === 'true') {
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
+                const dayOfWeek = new Date(usage.get().reading_time).getDay();
+                const dayKey = daysOfWeek[dayOfWeek];
+                if (!acc[dayKey]) {
+                    acc[dayKey] = {
+                        day: dayKey,
+                        total_energy_usage: 0,
+                        count: 0
+                    };
+                }
+                acc[dayKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[dayKey].count += 1;
                 return acc;
             }, {});
 
