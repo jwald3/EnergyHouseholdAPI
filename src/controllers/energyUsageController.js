@@ -25,7 +25,10 @@ export const getAllEnergyUsages = async (req, res) => {
 
         if (month) {
             const monthInt = parseInt(month, 10);
-            whereClause[Op.and] = sequelize.where(sequelize.fn('EXTRACT', sequelize.literal('"month"'), sequelize.col('reading_time')), monthInt);
+            whereClause.reading_time = {
+                ...whereClause.reading_time,
+                [Op.and]: sequelize.where(sequelize.fn('EXTRACT', sequelize.literal('month from "reading_time"')), monthInt)
+            };
         }
 
         const energyUsages = await EnergyUsage.findAll({ where: whereClause });
