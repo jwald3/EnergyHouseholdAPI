@@ -1,5 +1,6 @@
 import EnergyUsage from "../models/EnergyUsage.js";
 import { Op } from 'sequelize';
+import sequelize from "../utils/database.js";
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
