@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date, aggregateByDay } = req.query;
+        const { household_id, date, month, aggregateByDay } = req.query;
 
         let whereClause = {};
 
@@ -22,21 +22,44 @@ export const getAllEnergyUsages = async (req, res) => {
             };
         }
 
+        if (month) {
+            whereClause[Op.and] = sequelize.where(sequelize.fn('MONTH', sequelize.col('reading_time')), month);
+        }
+
         const energyUsages = await EnergyUsage.findAll({ where: whereClause});
         
-        if (aggregateByDay === 'true') {
+        if (aggregateByTime === 'true') {
+            const aggregatedData = energyUsages.reduce((acc, usage) => {
+                const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
+                if (!acc[timeKey]) {
+                    acc[timeKey] = {
+                        time: timeKey,
+                        total_energy_usage: 0,
+                        count: 0
+                    };
+                }
+                acc[timeKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[timeKey].count += 1;
+                return acc;
+            }, {});
+        
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+        } else if (aggregateByDay === 'true') {
             const aggregatedData = energyUsages.reduce((acc, usage) => {
                 const dateKey = usage.get().reading_time.toISOString().split('T')[0];
                 if (!acc[dateKey]) {
                     acc[dateKey] = {
                         date: dateKey,
-                        total_energy_usage: 0
+                        total_energy_usage: 0,
+                        count: 0
                     };
                 }
                 acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[dateKey].count += 1;
                 return acc;
             }, {});
-
+        
             const aggregatedDataArray = Object.values(aggregatedData);
             res.json(aggregatedDataArray);
         } else {
