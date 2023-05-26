@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date, aggregateByDay, aggregateByTime, aggregateByWeekDay, month } = req.query;
+        const { household_id, date, aggregateByDay, aggregateByTime, aggregateByWeekDay, month, page, limit } = req.query;
 
         let whereClause = {};
 
@@ -23,7 +23,17 @@ export const getAllEnergyUsages = async (req, res) => {
             };
         }
 
-        const energyUsages = await EnergyUsage.findAll({ where: whereClause });
+        // Convert page and limit to integers and calculate offset
+        const currentPage = parseInt(page, 10) || 1;
+        const pageSize = parseInt(limit, 10) || 10;
+        const offset = (currentPage - 1) * pageSize;
+
+
+        const energyUsages = await EnergyUsage.findAll({ 
+            where: whereClause,
+            offset: offset,
+            limit: limit 
+        });
 
         // Convert the string to a number
         const filterMonth = Number(month);
