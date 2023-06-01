@@ -56,23 +56,24 @@ const constructWhereClause = (household_id, date, year, month) => {
     }
 
     if (year) {
-        const startOfYear = new Date(year, 0, 1);
-        const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+        if (month) {
+            const startOfMonth = new Date(year, month - 1, 1);
+            const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+    
+            whereClause.reading_time = {
+                [Op.gte]: startOfMonth,
+                [Op.lte]: endOfMonth
+            };
+        } else {
+            const startOfYear = new Date(year, 0, 1);
+            const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
-        whereClause.reading_time = {
-            [Op.gte]: startOfYear,
-            [Op.lte]: endOfYear
-        };
-    }
-
-    if (month) {
-        const startOfMonth = new Date(year, month - 1, 1);
-        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
-
-        whereClause.reading_time = {
-            [Op.gte]: startOfMonth,
-            [Op.lte]: endOfMonth
-        };
+            whereClause.reading_time = {
+                [Op.gte]: startOfYear,
+                [Op.lte]: endOfYear
+            };
+        }
+        
     }
 
     return whereClause;
