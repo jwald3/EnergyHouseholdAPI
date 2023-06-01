@@ -48,44 +48,38 @@ export const getAllEnergyUsages = async (req, res) => {
             });
         }
 
-        if (aggregateByWeek === 'true') {
-            // get week number from the query parameter
-            const weekNumber = Number(week);
-
-            // validate the week number
-            if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 52) {
-                res.status(400).json({ message: "Invalid week number." });
+        else if (aggregateByWeek === 'true') {
+            const specifiedWeek = Number(week);
+            if (isNaN(specifiedWeek) || specifiedWeek < 1 || specifiedWeek > 52) {
+                res.status(400).json({ message: "Invalid week number. Please specify a week number between 1 and 52." });
                 return;
             }
-
-            // calculate the start and end of the week
-            const start = startOfWeek(setWeek(new Date(), weekNumber, { weekStartsOn: 1 }));
-            const end = endOfWeek(setWeek(new Date(), weekNumber, { weekStartsOn: 1 }));
-
-            // filter the energy usages for the given week
-            filteredEnergyUsages = energyUsages.filter(usage => {
-                const usageDate = new Date(usage.get().reading_time);
-                return usageDate >= start && usageDate <= end;
-            });
-
-            // aggregate the filtered usages
+        
             const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
-                const dateKey = formatISO(new Date(usage.get().reading_time), { representation: 'date' });
-                if (!acc[dateKey]) {
-                    acc[dateKey] = {
-                        date: dateKey,
-                        total_energy_usage: 0,
-                        count: 0
-                    };
+                const usageDate = new Date(usage.get().reading_time);
+                const usageYear = usageDate.getFullYear();
+                const firstDayOfYear = new Date(usageYear, 0, 1);  // First day of the year
+                const firstDayOfWeekOne = firstDayOfYear.getDay() === 0 ? firstDayOfYear : new Date(usageYear, 0, 2 - firstDayOfYear.getDay());  // First Monday of the year
+        
+                const weekNumber = Math.floor((usageDate - firstDayOfWeekOne) / (7 * 24 * 60 * 60 * 1000)) + 1;
+        
+                if (weekNumber === specifiedWeek) {
+                    const weekKey = `Week ${weekNumber}`;
+                    if (!acc[weekKey]) {
+                        acc[weekKey] = {
+                            week: weekKey,
+                            total_energy_usage: 0,
+                            count: 0
+                        };
+                    }
+                    acc[weekKey].total_energy_usage += Number(usage.get().energy_usage);
+                    acc[weekKey].count += 1;
                 }
-                acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
-                acc[dateKey].count += 1;
                 return acc;
             }, {});
-
+        
             const aggregatedDataArray = Object.values(aggregatedData);
             res.json(aggregatedDataArray);
-            return;
         }
 
         if (aggregateByTime === 'true') {
