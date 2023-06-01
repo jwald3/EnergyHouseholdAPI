@@ -57,36 +57,117 @@ export const getAllEnergyUsages = async (req, res) => {
             });
         }
 
-        // ... your existing code for other aggregations ...
-
-        if (rollingWindow === 'true') {
-            // Group by day
-            const dailyEnergyUsages = {};
-            energyUsages.forEach(usage => {
-                const day = usage.get().reading_time.toISOString().split('T')[0];  // Get the day
-                if (!dailyEnergyUsages[day]) {
-                    dailyEnergyUsages[day] = {
-                        date: day,
+        if (aggregateByTime === 'true') {
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
+                const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
+                if (!acc[timeKey]) {
+                    acc[timeKey] = {
+                        time: timeKey,
                         total_energy_usage: 0,
                         count: 0
                     };
                 }
-                dailyEnergyUsages[day].total_energy_usage += Number(usage.get().energy_usage);
-                dailyEnergyUsages[day].count += 1;
-            });
+                acc[timeKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[timeKey].count += 1;
+                return acc;
+            }, {});
 
-            const dailyEnergyUsagesArray = Object.values(dailyEnergyUsages);
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+        } else if (aggregateByDay === 'true') {
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
+                const dateKey = usage.get().reading_time.toISOString().split('T')[0];
+                if (!acc[dateKey]) {
+                    acc[dateKey] = {
+                        date: dateKey,
+                        total_energy_usage: 0,
+                        count: 0
+                    };
+                }
+                acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[dateKey].count += 1;
+                return acc;
+            }, {});
 
-            // The time window for the rolling average
-            const timeWindow = 6;
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+        } else if (aggregateByWeekDay === 'true') {
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
+                const dayOfWeek = new Date(usage.get().reading_time).getDay();
+                const dayKey = daysOfWeek[dayOfWeek];
+                if (!acc[dayKey]) {
+                    acc[dayKey] = {
+                        day: dayKey,
+                        total_energy_usage: 0,
+                        count: 0
+                    };
+                }
+                acc[dayKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[dayKey].count += 1;
+                return acc;
+            }, {});
+
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+        } else if (aggregateByWeek === 'true') {
+            const specifiedWeek = Number(week);
+            if (isNaN(specifiedWeek) || specifiedWeek < 1 || specifiedWeek > 52) {
+                res.status(400).json({ message: "Invalid week number. Please specify a week number between 1 and 52." });
+                return;
+            }
+
+            const firstDayOfYear = new Date(new Date().getFullYear(), 0, 1);  // First day of the year
+            const firstDayOfWeekOne = firstDayOfYear.getDay() === 0 ? firstDayOfYear : new Date(new Date().getFullYear(), 0, 2 - firstDayOfYear.getDay());  // First Monday of the year
+
+            // Calculate start and end date of the specified week
+            const startDate = new Date(firstDayOfWeekOne.getTime() + 7 * 24 * 60 * 60 * 1000 * (specifiedWeek - 1));
+            const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            const weeklyData = filteredEnergyUsages.filter(usage => {
+                const usageDate = new Date(usage.get().reading_time);
+                return usageDate >= startDate && usageDate < endDate;
+            }).map(usage => ({
+                ...usage.get(),
+                usage_id: Number(usage.get().usage_id),
+                energy_usage: Number(usage.get().energy_usage)
+            }));
+
+            res.json(weeklyData);
+        } else if (rollingWindow === 'true') {
+            // Prepare data for rolling average calculation
+            const dailyData = filteredEnergyUsages.reduce((acc, usage) => {
+                const dateKey = usage.get().reading_time.toISOString().split('T')[0];
+                if (!acc[dateKey]) {
+                    acc[dateKey] = {
+                        date: dateKey,
+                        total_energy_usage: 0,
+                        count: 0
+                    };
+                }
+                acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[dateKey].count += 1;
+                return acc;
+            }, {});
+
+            const dailyDataArray = Object.values(dailyData).map(data => ({
+                ...data,
+                average_energy_usage: data.total_energy_usage / data.count  // Calculate daily average
+            }));
+
+            // Sort by date in ascending order
+            dailyDataArray.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // The time window for the moving average
+            const timeWindow = 15;
 
             // Create an array to store the moving averages
             const movingAverages = [];
 
             // Calculate moving averages
-            for(let i = 0; i <= dailyEnergyUsagesArray.length - timeWindow; i++) {
-                const windowData = dailyEnergyUsagesArray.slice(i, i + timeWindow);
-                const sum = windowData.reduce((sum, dataPoint) => sum + dataPoint.total_energy_usage, 0);
+            for(let i = 0; i <= dailyDataArray.length - timeWindow; i++) {
+                const windowData = dailyDataArray.slice(i, i + timeWindow);
+                const sum = windowData.reduce((sum, dataPoint) => sum + dataPoint.average_energy_usage, 0);
                 const average = sum / windowData.length;
 
                 movingAverages.push({
@@ -111,8 +192,6 @@ export const getAllEnergyUsages = async (req, res) => {
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
-
-
 
 
 
