@@ -16,13 +16,27 @@ export const getDailyEnergyUsages = async (req, res) => {
     }
 }
 
-const getBaseQuery = async (household_id, date, year) => {
-    const whereClause = constructWhereClause(household_id, date, year);
+export const getMonthlyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, month } = req.query;
+
+        const energyUsages = await getBaseQuery(household_id, month);
+
+        const aggregatedData = aggregateByDay(energyUsages);
+
+        res.json(aggregatedData);
+    } catch (error) {
+        handleError(res, error, "Error receiving monthly energy usage readings");
+    }
+}
+
+const getBaseQuery = async (household_id = null, date = null, year = null, month = null) => {
+    const whereClause = constructWhereClause(household_id, date, year, month);
 
     return await EnergyUsage.findAll({ where: whereClause });
 }
 
-const constructWhereClause = (household_id, date, year) => {
+const constructWhereClause = (household_id, date, year, month) => {
     let whereClause = {};
 
     if (household_id) {
@@ -51,12 +65,48 @@ const constructWhereClause = (household_id, date, year) => {
         };
     }
 
+    if (month) {
+        const startOfMonth = new Date(year, month - 1, 1);
+        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+        whereClause.reading_time = {
+            [Op.gte]: startOfMonth,
+            [Op.lte]: endOfMonth
+        };
+    }
+
     return whereClause;
 }
 
 const aggregateByTime = (energyUsages) => {
     const aggregatedObject = energyUsages.reduce((acc, usage) => {
         const timeKey = usage.get().reading_time.toISOString().split('.')[0];
+        if (!acc[timeKey]) {
+            acc[timeKey] = {
+                time: timeKey,
+                total_energy_usage: 0,
+                count: 0
+            };
+        }
+
+        acc[timeKey].total_energy_usage += Number(usage.get().energy_usage);
+        acc[timeKey].count += 1;
+
+        return acc;
+    }, {});
+
+    // Convert the object to an array
+    const aggregatedArray = Object.values(aggregatedObject);
+
+    // Sort the array by time
+    aggregatedArray.sort((a, b) => a.time.localeCompare(b.time));
+
+    return aggregatedArray;
+}
+
+const aggregateByDay = (energyUsages) => {
+    const aggregatedObject = energyUsages.reduce((acc, usage) => {
+        const timeKey = usage.get().reading_time.toISOString().split('T')[0];
         if (!acc[timeKey]) {
             acc[timeKey] = {
                 time: timeKey,
