@@ -20,7 +20,7 @@ export const getMonthlyEnergyUsages = async (req, res) => {
     try {
         const { household_id, month, year } = req.query;
 
-        const energyUsages = await getBaseQuery(household_id, null, month, year);
+        const energyUsages = await getBaseQuery(household_id, null, year, month);
 
         const aggregatedData = aggregateByDay(energyUsages);
 
