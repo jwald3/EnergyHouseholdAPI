@@ -71,8 +71,28 @@ export const getAllEnergyUsages = async (req, res) => {
                 energy_usage: Number(usage.get().energy_usage)
             }));
         
-            res.json(weeklyData);
+            // The time window for the moving average
+            const timeWindow = 3;
+        
+            // Create an array to store the moving averages
+            const movingAverages = [];
+        
+            // Calculate moving averages
+            for(let i = 0; i <= weeklyData.length - timeWindow; i++) {
+                const windowData = weeklyData.slice(i, i + timeWindow);
+                const sum = windowData.reduce((sum, dataPoint) => sum + dataPoint.energy_usage, 0);
+                const average = sum / windowData.length;
+        
+                movingAverages.push({
+                    start_time: windowData[0].reading_time,
+                    end_time: windowData[windowData.length - 1].reading_time,
+                    average_energy_usage: average
+                });
+            }
+        
+            res.json(movingAverages);
         }
+        
 
         if (aggregateByTime === 'true') {
             const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
