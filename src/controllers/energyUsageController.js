@@ -55,7 +55,7 @@ const constructWhereClause = (household_id, date, year) => {
 }
 
 const aggregateByTime = (energyUsages) => {
-    return energyUsages.reduce((acc, usage) => {
+    const aggregatedObject = energyUsages.reduce((acc, usage) => {
         const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
         if (!acc[timeKey]) {
             acc[timeKey] = {
@@ -70,7 +70,16 @@ const aggregateByTime = (energyUsages) => {
 
         return acc;
     }, {});
+
+    // Convert the object to an array
+    const aggregatedArray = Object.values(aggregatedObject);
+
+    // Sort the array by time
+    aggregatedArray.sort((a, b) => a.time.localeCompare(b.time));
+
+    return aggregatedArray;
 }
+
 
 const handleError = (res, error, errorMessage) => {
     console.error("Error Details: ", error);
