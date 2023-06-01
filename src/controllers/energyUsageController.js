@@ -30,6 +30,21 @@ export const getMonthlyEnergyUsages = async (req, res) => {
     }
 }
 
+export const getYearlyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, year } = req.query;
+
+        const energyUsages = await getBaseQuery(household_id, null, year, null);
+
+        const aggregatedData = aggregateByDaysWithWindow(energyUsages);
+
+        res.json(aggregatedData);
+
+    } catch (error) {
+        handleError(res, error, "Error receiving yearly energy usage readings")
+    } 
+}
+
 const getBaseQuery = async (household_id = null, date = null, year = null, month = null) => {
     const whereClause = constructWhereClause(household_id, date, year, month);
 
@@ -129,6 +144,39 @@ const aggregateByDay = (energyUsages) => {
     aggregatedArray.sort((a, b) => a.time.localeCompare(b.time));
 
     return aggregatedArray;
+}
+
+const aggregateByDaysWithWindow = (energyUsages) => {
+    const dailyData = aggregateByDay(energyUsages);
+
+    let rollingWindowLength = 6;
+
+    let movingAverages = [];
+
+    for (let i = 0; i <= dailyData.length - rollingWindowLength; i++) {
+        let windowData = dailyData.slice(i, i + rollingWindowLength);
+
+        let totalEnergyUsageSum = 0;
+        let totalCount = 0;
+
+        for (let dataPoint of windowData) {
+            totalEnergyUsageSum += dataPoint.total_energy_usage;
+            totalCount += dataPoint.count;
+        }
+
+        let averageEnergyUsage = totalEnergyUsageSum / rollingWindowLength;
+
+        let entry = {
+            start_date: windowData[0].time,
+            end_date: windowData[windowData.length - 1].time,
+            averageEnergyUsage: averageEnergyUsage,
+            count: rollingWindowLength
+        };
+
+        movingAverages.push(entry);
+    }
+
+    return movingAverages;
 }
 
 

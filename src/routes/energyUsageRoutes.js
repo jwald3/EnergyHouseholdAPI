@@ -7,12 +7,14 @@ import {
     deleteEnergyUsage,
     getDailyEnergyUsages,
     getMonthlyEnergyUsages,
+    getYearlyEnergyUsages
 } from "../controllers/energyUsageController.js";
 
 const router = Router();
 
 router.get("/daily", getDailyEnergyUsages);
 router.get("/monthly", getMonthlyEnergyUsages);
+router.get("/yearly", getYearlyEnergyUsages);
 
 router.get("/", getAllEnergyUsages);
 router.get("/:usage_id", getEnergyUsageById);
