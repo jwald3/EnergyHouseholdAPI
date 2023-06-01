@@ -78,7 +78,7 @@ export const getAllEnergyUsages = async (req, res) => {
             const dailyEnergyUsagesArray = Object.values(dailyEnergyUsages);
 
             // The time window for the rolling average
-            const timeWindow = 15;
+            const timeWindow = 6;
 
             // Create an array to store the moving averages
             const movingAverages = [];
