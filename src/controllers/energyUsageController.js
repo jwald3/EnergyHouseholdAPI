@@ -56,7 +56,7 @@ const constructWhereClause = (household_id, date, year) => {
 
 const aggregateByTime = (energyUsages) => {
     const aggregatedObject = energyUsages.reduce((acc, usage) => {
-        const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
+        const timeKey = usage.get().reading_time.toISOString().split('.')[0];
         if (!acc[timeKey]) {
             acc[timeKey] = {
                 time: timeKey,
