@@ -1,9 +1,10 @@
 import EnergyUsage from "../models/EnergyUsage.js";
-import { Op } from 'sequelize';
+const { startOfWeek, endOfWeek, setWeek, formatISO } = require('date-fns');
+const { Op } = require('sequelize');
 
 export const getAllEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date, aggregateByDay, aggregateByTime, aggregateByWeekDay, month, page, limit } = req.query;
+        const { household_id, date, aggregateByDay, aggregateByTime, aggregateByWeek, aggregateByWeekDay, month, page, limit, week } = req.query;
 
         let whereClause = {};
 
@@ -45,6 +46,46 @@ export const getAllEnergyUsages = async (req, res) => {
                 const usageMonth = new Date(usage.get().reading_time).getMonth() + 1;
                 return usageMonth === filterMonth;
             });
+        }
+
+        if (aggregateByWeek === 'true') {
+            // get week number from the query parameter
+            const weekNumber = Number(week);
+
+            // validate the week number
+            if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 52) {
+                res.status(400).json({ message: "Invalid week number." });
+                return;
+            }
+
+            // calculate the start and end of the week
+            const start = startOfWeek(setWeek(new Date(), weekNumber, { weekStartsOn: 1 }));
+            const end = endOfWeek(setWeek(new Date(), weekNumber, { weekStartsOn: 1 }));
+
+            // filter the energy usages for the given week
+            filteredEnergyUsages = energyUsages.filter(usage => {
+                const usageDate = new Date(usage.get().reading_time);
+                return usageDate >= start && usageDate <= end;
+            });
+
+            // aggregate the filtered usages
+            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
+                const dateKey = formatISO(new Date(usage.get().reading_time), { representation: 'date' });
+                if (!acc[dateKey]) {
+                    acc[dateKey] = {
+                        date: dateKey,
+                        total_energy_usage: 0,
+                        count: 0
+                    };
+                }
+                acc[dateKey].total_energy_usage += Number(usage.get().energy_usage);
+                acc[dateKey].count += 1;
+                return acc;
+            }, {});
+
+            const aggregatedDataArray = Object.values(aggregatedData);
+            res.json(aggregatedDataArray);
+            return;
         }
 
         if (aggregateByTime === 'true') {
@@ -114,6 +155,7 @@ export const getAllEnergyUsages = async (req, res) => {
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
     }
 };
+
 
 
 
