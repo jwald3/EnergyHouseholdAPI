@@ -2,6 +2,133 @@ import EnergyUsage from "../models/EnergyUsage.js";
 import { startOfWeek, endOfWeek, setWeek, formatISO } from 'date-fns';
 import { Op } from 'sequelize';
 
+export const getDailyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, date } = req.query;
+
+        const energyUsages = await getBaseQuery(household_id, date);
+
+        const aggregatedData = aggregateByTime(energyUsages);
+
+        res.json(aggregatedData);
+    } catch (error) {
+        handleError(res, error, "Error receiving daily energy usage readings");
+    }
+}
+
+const getBaseQuery = async (household_id, date, year) => {
+    const whereClause = constructWhereClause(household_id, date, year);
+
+    return await EnergyUsage.findAll({ where: whereClause });
+}
+
+const constructWhereClause = (household_id, date, year) => {
+    let whereClause = {};
+
+    if (household_id) {
+        whereClause.household_id = household_id;
+    }
+
+    if (date) {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+
+        whereClause.reading_time = {
+            [Op.gte]: startDate,
+            [Op.lte]: endDate
+        };
+    }
+
+    if (year) {
+        const startOfYear = new Date(year, 0, 1);
+        const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+
+        whereClause.reading_time = {
+            [Op.gte]: startOfYear,
+            [Op.lte]: endOfYear
+        };
+    }
+
+    return whereClause;
+}
+
+const aggregateByTime = (energyUsages) => {
+    return energyUsages.reduce((acc, usage) => {
+        const timeKey = usage.get().reading_time.toISOString().split('T')[1].split('.')[0];
+        if (!acc[timeKey]) {
+            acc[timeKey] = {
+                time: timeKey,
+                total_energy_usage: 0,
+                count: 0
+            };
+        }
+
+        acc[timeKey].total_energy_usage += Number(usage.get().energy_usage);
+        acc[timeKey].count += 1;
+
+        return acc;
+    }, {});
+}
+
+const handleError = (res, error, errorMessage) => {
+    console.error("Error Details: ", error);
+    res.status(500).json({ message: errorMessage});
+}
+
+export const getEnergyUsageById = async (req, res) => {
+    try {
+        const energyUsage = await EnergyUsage.findByPk(req.params.usage_id);
+        if (!energyUsage)
+            return res.status(404).json({ message: "EnergyUsage not found." });
+        res.json(energyUsage);
+    } catch (error) {
+        console.error("Error details:", error); // Log the error details
+        res.status(500).json({ message: "Error retrieving EnergyUsage." });
+    }
+};
+
+export const createEnergyUsage = async (req, res) => {
+    try {
+        const energyUsage = await EnergyUsage.create(req.body);
+        res.status(201).json(energyUsage);
+    } catch (error) {
+        console.error("Error details:", error); // Log the error details
+        res.status(500).json({ message: "Error creating EnergyUsage." });
+    }
+};
+
+export const updateEnergyUsage = async (req, res) => {
+    try {
+        const [updatedRows] = await EnergyUsage.update(req.body, {
+            where: { usage_id: req.params.usage_id },
+        });
+
+        if (!updatedRows)
+            return res.status(404).json({ message: "EnergyUsage not found." });
+        res.json({ message: "EnergyUsage updated." });
+    } catch (error) {
+        console.error("Error details:", error); // Log the error details
+        res.status(500).json({ message: "Error updating EnergyUsage." });
+    }
+};
+
+export const deleteEnergyUsage = async (req, res) => {
+    try {
+        const deletedRows = await EnergyUsage.destroy({
+            where: { usage_id: req.params.usage_id },
+        });
+
+        if (!deletedRows)
+            return res.status(404).json({ message: "EnergyUsage not found." });
+        res.json({ message: "EnergyUsage deleted." });
+    } catch (error) {
+        console.error("Error details:", error); // Log the error details
+        res.status(500).json({ message: "Error deleting EnergyUsage." });
+    }
+};
+
 export const getAllEnergyUsages = async (req, res) => {
     try {
         const { household_id, date, aggregateByDay, aggregateByTime, aggregateByWeek, aggregateByWeekDay, month, page, limit, week, year, rollingWindow } = req.query;
@@ -190,59 +317,5 @@ export const getAllEnergyUsages = async (req, res) => {
     } catch (error) {
         console.error("Error details:", error);
         res.status(500).json({ message: "Error retrieving EnergyUsages" });
-    }
-};
-
-
-
-export const getEnergyUsageById = async (req, res) => {
-    try {
-        const energyUsage = await EnergyUsage.findByPk(req.params.usage_id);
-        if (!energyUsage)
-            return res.status(404).json({ message: "EnergyUsage not found." });
-        res.json(energyUsage);
-    } catch (error) {
-        console.error("Error details:", error); // Log the error details
-        res.status(500).json({ message: "Error retrieving EnergyUsage." });
-    }
-};
-
-export const createEnergyUsage = async (req, res) => {
-    try {
-        const energyUsage = await EnergyUsage.create(req.body);
-        res.status(201).json(energyUsage);
-    } catch (error) {
-        console.error("Error details:", error); // Log the error details
-        res.status(500).json({ message: "Error creating EnergyUsage." });
-    }
-};
-
-export const updateEnergyUsage = async (req, res) => {
-    try {
-        const [updatedRows] = await EnergyUsage.update(req.body, {
-            where: { usage_id: req.params.usage_id },
-        });
-
-        if (!updatedRows)
-            return res.status(404).json({ message: "EnergyUsage not found." });
-        res.json({ message: "EnergyUsage updated." });
-    } catch (error) {
-        console.error("Error details:", error); // Log the error details
-        res.status(500).json({ message: "Error updating EnergyUsage." });
-    }
-};
-
-export const deleteEnergyUsage = async (req, res) => {
-    try {
-        const deletedRows = await EnergyUsage.destroy({
-            where: { usage_id: req.params.usage_id },
-        });
-
-        if (!deletedRows)
-            return res.status(404).json({ message: "EnergyUsage not found." });
-        res.json({ message: "EnergyUsage deleted." });
-    } catch (error) {
-        console.error("Error details:", error); // Log the error details
-        res.status(500).json({ message: "Error deleting EnergyUsage." });
     }
 };
