@@ -1,5 +1,5 @@
 import EnergyUsage from "../models/EnergyUsage.js";
-const { startOfWeek, endOfWeek, setWeek, formatISO } = require('date-fns');
+import { startOfWeek, endOfWeek, setWeek, formatISO } from 'date-fns';
 const { Op } = require('sequelize');
 
 export const getAllEnergyUsages = async (req, res) => {
