@@ -55,31 +55,23 @@ export const getAllEnergyUsages = async (req, res) => {
                 return;
             }
         
-            const aggregatedData = filteredEnergyUsages.reduce((acc, usage) => {
+            const firstDayOfYear = new Date(new Date().getFullYear(), 0, 1);  // First day of the year
+            const firstDayOfWeekOne = firstDayOfYear.getDay() === 0 ? firstDayOfYear : new Date(new Date().getFullYear(), 0, 2 - firstDayOfYear.getDay());  // First Monday of the year
+        
+            // Calculate start and end date of the specified week
+            const startDate = new Date(firstDayOfWeekOne.getTime() + 7 * 24 * 60 * 60 * 1000 * (specifiedWeek - 1));
+            const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        
+            const weeklyData = filteredEnergyUsages.filter(usage => {
                 const usageDate = new Date(usage.get().reading_time);
-                const usageYear = usageDate.getFullYear();
-                const firstDayOfYear = new Date(usageYear, 0, 1);  // First day of the year
-                const firstDayOfWeekOne = firstDayOfYear.getDay() === 0 ? firstDayOfYear : new Date(usageYear, 0, 2 - firstDayOfYear.getDay());  // First Monday of the year
+                return usageDate >= startDate && usageDate < endDate;
+            }).map(usage => ({
+                ...usage.get(),
+                usage_id: Number(usage.get().usage_id),
+                energy_usage: Number(usage.get().energy_usage)
+            }));
         
-                const weekNumber = Math.floor((usageDate - firstDayOfWeekOne) / (7 * 24 * 60 * 60 * 1000)) + 1;
-        
-                if (weekNumber === specifiedWeek) {
-                    const weekKey = `Week ${weekNumber}`;
-                    if (!acc[weekKey]) {
-                        acc[weekKey] = {
-                            week: weekKey,
-                            total_energy_usage: 0,
-                            count: 0
-                        };
-                    }
-                    acc[weekKey].total_energy_usage += Number(usage.get().energy_usage);
-                    acc[weekKey].count += 1;
-                }
-                return acc;
-            }, {});
-        
-            const aggregatedDataArray = Object.values(aggregatedData);
-            res.json(aggregatedDataArray);
+            res.json(weeklyData);
         }
 
         if (aggregateByTime === 'true') {
