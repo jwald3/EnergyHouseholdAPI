@@ -4,9 +4,9 @@ import { Op } from 'sequelize';
 
 export const getDailyEnergyUsages = async (req, res) => {
     try {
-        const { household_id, date } = req.query;
+        const { household_id, date, year } = req.query;
 
-        const energyUsages = await getBaseQuery(household_id, date);
+        const energyUsages = await getBaseQuery(household_id, date, year);
 
         const aggregatedData = aggregateByTime(energyUsages);
 
@@ -18,9 +18,9 @@ export const getDailyEnergyUsages = async (req, res) => {
 
 export const getMonthlyEnergyUsages = async (req, res) => {
     try {
-        const { household_id, month } = req.query;
+        const { household_id, month, year } = req.query;
 
-        const energyUsages = await getBaseQuery(household_id, month);
+        const energyUsages = await getBaseQuery(household_id, month, year);
 
         const aggregatedData = aggregateByDay(energyUsages);
 
