@@ -152,7 +152,7 @@ export const getAllEnergyUsages = async (req, res) => {
 
             const dailyDataArray = Object.values(dailyData).map(data => ({
                 ...data,
-                average_energy_usage: data.total_energy_usage / data.count  // Calculate daily average
+                average_energy_usage: data.total_energy_usage  // Calculate daily average
             }));
 
             // Sort by date in ascending order
