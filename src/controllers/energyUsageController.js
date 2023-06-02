@@ -207,16 +207,16 @@ const aggregateByDaysWithWindow = (energyUsages) => {
         let totalCount = 0;
 
         for (let dataPoint of windowData) {
-            totalEnergyUsageSum += dataPoint.total_energy_usage;
+            totalEnergyUsageSum += dataPoint.energy_usage;
             totalCount += dataPoint.count;
         }
 
-        let averageEnergyUsage = totalEnergyUsageSum / rollingWindowLength;
+        let energy_usage = totalEnergyUsageSum / rollingWindowLength;
 
         let entry = {
             start_date: windowData[0].time,
             end_date: windowData[windowData.length - 1].time,
-            energy_usage: averageEnergyUsage,
+            energy_usage: energy_usage,
             count: rollingWindowLength
         };
 
