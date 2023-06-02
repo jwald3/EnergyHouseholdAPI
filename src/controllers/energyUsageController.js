@@ -6,7 +6,7 @@ export const getDailyEnergyUsages = async (req, res) => {
     try {
         const { household_id, date, year } = req.query;
 
-        const energyUsages = await getBaseQuery(household_id, date, null, year);
+        const energyUsages = await getBaseQuery(household_id, date, null, year, null, null);
 
         const aggregatedData = aggregateByTime(energyUsages);
 
@@ -16,11 +16,38 @@ export const getDailyEnergyUsages = async (req, res) => {
     }
 }
 
+export const getWeeklyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, year, week } = req.query;
+
+        // first day of the year
+        let firstDayOfYear = new Date(year, 0, 1);
+
+        // find the first Sunday of the year
+        while (firstDayOfYear.getDay() !== 0) {
+            firstDayOfYear.setDate(firstDayOfYear.getDate() + 1);
+        }
+
+        let startOfWeek = new Date(firstDayOfYear);
+        startOfWeek.setDate(firstDayOfYear.getDate() + (week - 1) * 7);
+        let endOfWeek = new Date(startOfWeek.getDate() + 7);
+        endOfWeek.setDate(startOfWeek.getDate() + 7);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        const energyUsages = await getBaseQuery(household_id, null, year, null, startOfWeek, endOfWeek);
+
+        res.json(energyUsages);
+
+    } catch (error) {
+        handleError(res, error, "Error receiving weekly energy usage readings");
+    }
+}
+
 export const getMonthlyEnergyUsages = async (req, res) => {
     try {
         const { household_id, month, year } = req.query;
 
-        const energyUsages = await getBaseQuery(household_id, null, year, month);
+        const energyUsages = await getBaseQuery(household_id, null, year, month, null, null);
 
         const aggregatedData = aggregateByDay(energyUsages);
 
@@ -34,7 +61,7 @@ export const getYearlyEnergyUsages = async (req, res) => {
     try {
         const { household_id, year } = req.query;
 
-        const energyUsages = await getBaseQuery(household_id, null, year, null);
+        const energyUsages = await getBaseQuery(household_id, null, year, null, null);
 
         const aggregatedData = aggregateByDaysWithWindow(energyUsages);
 
@@ -45,8 +72,8 @@ export const getYearlyEnergyUsages = async (req, res) => {
     } 
 }
 
-const getBaseQuery = async (household_id = null, date = null, year = null, month = null) => {
-    const whereClause = constructWhereClause(household_id, date, year, month);
+const getBaseQuery = async (household_id = null, date = null, year = null, month = null, startOfWeek = null, endOfWeek = null) => {
+    const whereClause = constructWhereClause(household_id, date, year, month, startOfWeek, endOfWeek);
 
     return await EnergyUsage.findAll({ where: whereClause });
 }
@@ -67,6 +94,13 @@ const constructWhereClause = (household_id, date, year, month) => {
         whereClause.reading_time = {
             [Op.gte]: startDate,
             [Op.lte]: endDate
+        };
+    }
+
+    if (startOfWeek && endOfWeek) {
+        whereClause.reading_time = {
+            [Op.gte]: startOfWeek,
+            [Op.lte]: endOfWeek
         };
     }
 
