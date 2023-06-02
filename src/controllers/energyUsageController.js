@@ -147,12 +147,12 @@ const aggregateByTime = (energyUsages) => {
         if (!acc[timeKey]) {
             acc[timeKey] = {
                 time: timeKey,
-                total_energy_usage: 0,
+                energy_usage: 0,
                 count: 0
             };
         }
 
-        acc[timeKey].total_energy_usage += Number(usage.get().energy_usage);
+        acc[timeKey].energy_usage += Number(usage.get().energy_usage);
         acc[timeKey].count += 1;
 
         return acc;
@@ -173,12 +173,12 @@ const aggregateByDay = (energyUsages) => {
         if (!acc[timeKey]) {
             acc[timeKey] = {
                 time: timeKey,
-                total_energy_usage: 0,
+                energy_usage: 0,
                 count: 0
             };
         }
 
-        acc[timeKey].total_energy_usage += Number(usage.get().energy_usage);
+        acc[timeKey].energy_usage += Number(usage.get().energy_usage);
         acc[timeKey].count += 1;
 
         return acc;
@@ -216,7 +216,7 @@ const aggregateByDaysWithWindow = (energyUsages) => {
         let entry = {
             start_date: windowData[0].time,
             end_date: windowData[windowData.length - 1].time,
-            averageEnergyUsage: averageEnergyUsage,
+            energy_usage: averageEnergyUsage,
             count: rollingWindowLength
         };
 
