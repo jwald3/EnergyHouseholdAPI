@@ -27,6 +27,26 @@ export const getDailyEnergyUsages = async (req, res) => {
     }
 }
 
+export const totalDailyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, date, year } = req.query;
+
+        const energyUsages = await getBaseQuery(household_id, date, null, year, null, null);
+
+        const totalUsage = totalEnergyUsage(energyUsages);
+
+        const responseData = {
+            "date": date,
+            "energy_usage": totalUsage
+        }
+
+        res.json(responseData);
+        
+    } catch (error) {
+        handleError(res, error, "Error receiving daily energy usage readings");
+    }
+}
+
 export const getWeeklyEnergyUsages = async (req, res) => {
     try {
         const { household_id, year, week } = req.query;
