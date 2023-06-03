@@ -56,7 +56,37 @@ export const getWeeklyEnergyUsages = async (req, res) => {
     }
 }
 
+export const totalWeeklyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, year, week } = req.query;
 
+        // first day of the year (in UTC)
+        let firstDayOfYear = new Date(Date.UTC(year, 0, 1));
+
+        // find the first Sunday of the year (in UTC)
+        while (firstDayOfYear.getUTCDay() !== 0) {
+            firstDayOfYear.setUTCDate(firstDayOfYear.getUTCDate() + 1);
+        }
+
+        let startOfWeek = new Date(firstDayOfYear.getTime());
+        startOfWeek.setUTCDate(firstDayOfYear.getUTCDate() + (week - 1) * 7);
+        let endOfWeek = new Date(startOfWeek.getTime());
+        endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+        endOfWeek.setUTCHours(23, 59, 59, 999);
+
+        console.log("startOfWeek:", startOfWeek.toISOString()); // Log the startOfWeek
+        console.log("endOfWeek:", endOfWeek.toISOString()); // Log the endOfWeek
+
+        const energyUsages = await getBaseQuery(household_id, null, year, null, startOfWeek, endOfWeek);
+
+        const totalUsage = totalEnergyUsage(energyUsages);
+
+        res.json(totalUsage);
+
+    } catch (error) {
+        handleError(res, error, "Error receiving weekly energy usage readings");
+    }
+}
 
 export const getMonthlyEnergyUsages = async (req, res) => {
     try {
@@ -67,6 +97,21 @@ export const getMonthlyEnergyUsages = async (req, res) => {
         const aggregatedData = aggregateByDay(energyUsages);
 
         res.json(aggregatedData);
+    } catch (error) {
+        handleError(res, error, "Error receiving monthly energy usage readings");
+    }
+}
+
+export const totalMonthlyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, month, year } = req.query;
+
+        const energyUsages = await getBaseQuery(household_id, null, year, month, null, null);
+
+        const totalUsage = totalEnergyUsage(energyUsages);
+
+        res.json(totalUsage);
+
     } catch (error) {
         handleError(res, error, "Error receiving monthly energy usage readings");
     }
@@ -86,6 +131,26 @@ export const getYearlyEnergyUsages = async (req, res) => {
         handleError(res, error, "Error receiving yearly energy usage readings")
     } 
 }
+
+export const totalYearlyEnergyUsages = async (req, res) => {
+    try {
+        const { household_id, year } = req.query;
+
+        const energyUsages = await getBaseQuery(household_id, null, year, null, null, null);
+
+        const totalUsage = totalEnergyUsage(energyUsages);
+
+        res.json(totalUsage);
+
+    } catch (error) {
+        handleError(res, error, "Error receiving yearly energy usage readings")
+    } 
+}
+
+const totalEnergyUsage = (energyUsages) => {
+    return energyUsages?.reduce((a, b) => a + Number(b.energy_usage), 0);
+}
+
 
 const getBaseQuery = async (household_id = null, date = null, year = null, month = null, startOfWeek = null, endOfWeek = null) => {
     const whereClause = constructWhereClause(household_id, date, year, month, startOfWeek, endOfWeek);

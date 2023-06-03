@@ -8,10 +8,17 @@ import {
     getDailyEnergyUsages,
     getWeeklyEnergyUsages,
     getMonthlyEnergyUsages,
-    getYearlyEnergyUsages
+    getYearlyEnergyUsages,
+    totalWeeklyEnergyUsages,
+    totalMonthlyEnergyUsages,
+    totalYearlyEnergyUsages
 } from "../controllers/energyUsageController.js";
 
 const router = Router();
+
+router.get("/totals/weekly", totalWeeklyEnergyUsages);
+router.get("/totals/monthly", totalMonthlyEnergyUsages);
+router.get("/totals/yearly", totalYearlyEnergyUsages)
 
 router.get("/daily", getDailyEnergyUsages);
 router.get("/weekly", getWeeklyEnergyUsages);
