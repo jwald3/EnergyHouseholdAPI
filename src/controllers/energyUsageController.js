@@ -81,7 +81,13 @@ export const totalWeeklyEnergyUsages = async (req, res) => {
 
         const totalUsage = totalEnergyUsage(energyUsages);
 
-        res.json(totalUsage);
+        const responseData = {
+            "week": week,
+            "year": year,
+            "energy_usage": totalUsage
+        }
+
+        res.json(responseData);
 
     } catch (error) {
         handleError(res, error, "Error receiving weekly energy usage readings");
@@ -110,7 +116,13 @@ export const totalMonthlyEnergyUsages = async (req, res) => {
 
         const totalUsage = totalEnergyUsage(energyUsages);
 
-        res.json(totalUsage);
+        const responseData = {
+            "month": month,
+            "year": year,
+            "energy_usage": totalUsage
+        }
+
+        res.json(responseData);
 
     } catch (error) {
         handleError(res, error, "Error receiving monthly energy usage readings");
@@ -140,7 +152,12 @@ export const totalYearlyEnergyUsages = async (req, res) => {
 
         const totalUsage = totalEnergyUsage(energyUsages);
 
-        res.json(totalUsage);
+        const responseData = {
+            "year": year,
+            "energy_usage": totalUsage
+        }
+
+        res.json(responseData);
 
     } catch (error) {
         handleError(res, error, "Error receiving yearly energy usage readings")
