@@ -250,7 +250,8 @@ const aggregateByTime = (energyUsages) => {
             acc[timeKey] = {
                 time: timeKey,
                 energy_usage: 0,
-                count: 0
+                count: 0,
+                household_id: usage.household_id
             };
         }
 
@@ -276,7 +277,8 @@ const aggregateByDay = (energyUsages) => {
             acc[timeKey] = {
                 time: timeKey,
                 energy_usage: 0,
-                count: 0
+                count: 0,
+                household_id: usage.household_id
             };
         }
 
