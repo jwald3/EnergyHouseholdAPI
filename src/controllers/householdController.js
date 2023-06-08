@@ -3,7 +3,15 @@ import { getLocationId } from "../services/locationService.js";
 
 export const getAllHouseholds = async (req, res) => {
     try {
-        const households = await Household.findAll();
+        const { provider_id } = req.query;
+
+        let whereClause = {};
+
+        if (provider_id) {
+            whereClause.provider_id = provider_id;
+        }
+
+        const households = await Household.findAll({ where: whereClause });
         res.json(households);
     } catch (error) {
         console.error("Error details:", error); // Log the error details
