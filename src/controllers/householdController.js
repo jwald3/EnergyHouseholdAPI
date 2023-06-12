@@ -8,17 +8,22 @@ export const getAllHouseholds = async (req, res) => {
         const { provider_id, region_id } = req.query;
 
         let whereClause = {};
+        let includeClause = [{
+            model: Location,
+            as: 'location', // Alias, it could be any name you prefer
+        }];
 
         if (provider_id) {
             whereClause.provider_id = provider_id;
         }
 
+        if (region_id) {
+            includeClause[0].where = { region_id }; // Add the region_id filter
+        }
+
         const households = await Household.findAll({
             where: whereClause,
-            include: [{
-                model: Location, 
-                as: 'location', // Alias, it could be any name you prefer
-            }]
+            include: includeClause
         });
         res.json(households);
     } catch (error) {
@@ -26,6 +31,7 @@ export const getAllHouseholds = async (req, res) => {
         res.status(500).json({ message: "Error retrieving households" });
     }
 };
+
 
 
 export const getHouseholdById = async (req, res) => {
