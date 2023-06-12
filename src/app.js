@@ -2,6 +2,8 @@ import express from "express";
 import householdRoutes from "./routes/householdRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
 import energyUsageRoutes from "./routes/energyUsageRoutes.js";
+import './utils/associations.js'
+
 
 const app = express();
 
